@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>NZ Crime Interactive Map</title>
+
+        <!--leaflet css-->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+          integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+          crossorigin="" />
+    
+        <!--leaflet js-->
+        <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+            integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+            crossorigin=""></script>
+
+        <!--leaflet label css-->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+
+        <!-- jquery link -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <!-- leaflet GeoServer request link-->
+        <script src="lib/src/L.Geoserver.js"></script>
+    
+        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+        <style>
+            #nz_region {
+                height: 100vh;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="nz_region"></div>
+
+        <script>
+            function getRegionColor(popCrime) {
+                return popCrime > 100000 ? '#990000' :
+                       popCrime > 60000  ? '#B20000' : 
+                       popCrime > 40000  ? '#CC0000' :
+                       popCrime > 30000  ? '#E60000' :
+                       popCrime > 15000  ? '#FF0000' : 
+                       popCrime > 10000  ?'#FF1919':
+                       popCrime > 7000  ? '#FF3333' :
+                       popCrime > 6000  ?'#FF4C4C':
+                       popCrime > 5000  ?'#FF6666':
+                       popCrime > 4000  ?'#FF7F7F':
+                       popCrime > 3000  ?'#FF9999':
+                       popCrime > 2000  ?'#FFB2B2':
+                       popCrime > 1000  ?'#FFCCCC':'#FFE5E5';
+
+            }
+
+            function regionStyle(feature){
+                return{
+                    weight: 1,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: '3', //move any dashed lines on the border, make the outline solid
+                    fillOpacity: 0.7,
+                    fillColor: getRegionColor(feature.properties.annual_region_victimisations)
+
+                }
+            }
+
+            function highlightFeature(e) {
+                const layer = e.target;
+
+                layer.setStyle({
+                    weight: 5,
+                    color: '#666',
+                    dashArray: '',
+                    fillOpacity: 0.5
+                });
+
+                if(!L.Browser.ie && !L.Browser.opera){
+                    layer.bringToFront();
+                }
+            }
+            
+            function resetRegionHighlight(e) {
+                e.target.setStyle({
+                    weight: 1,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: '3',
+                    fillOpacity: 0.7,
+                    fillColor: getRegionColor(e.target.feature.properties.annual_region_victimisations)
+                });
+            }
+
+            function zoomToFeature(e){
+                map.fitBounds(e.target.getBounds());
+            }
+
+            function regionOnEachFeature(feature, layer){
+                var popupContent = `<b>Region:</b> ${feature.properties.Region} <br /> 
+                                    <b>Year:</b> ${feature.properties.Year} <br /> 
+                                    <b>Total Crime:</b> ${feature.properties.annual_region_victimisations} <br />
+                                    <b>----------------</b> <br>
+                                    <b>Abduction,Harassment and Related Offences:</b> ${feature.properties.Abduction_Harassment_Related} <br />
+                                    <b>Acts Intended to Cause Injury:</b> ${feature.properties.Acts_Intended_to_Cause_Injury} <br />
+                                    <b>Robbery, Extortion and Related Offences:</b> ${feature.properties.Robbery_Extortion_Related} <br />
+                                    <b>Sexual Assault and Related Offences:</b> ${feature.properties.Sexual_Assault_Related} <br />
+                                    <b>Theft and Related Offences:</b> ${feature.properties.Theft_Related} <br />
+                                    <b>Unlawful Entry With Intent:</b> ${feature.properties.Unlawful_Entry_With_Intent} <br />`;
+
+
+                layer.bindPopup(popupContent)
+
+                layer.on('mouseover', function (e){
+                    highlightFeature(e);
+                    this.openPopup();
+                });
+
+                layer.on('mouseout', function (e) {
+                    resetRegionHighlight(e);
+                    this.closePopup();
+                });
+
+                layer.on('click', function (e){
+                    zoomToFeature(e);
+                    
+                });
+
+            }
+
+            const map = L.map("nz_region", {
+                center: [-40.30, 174.25],
+                zoom: 6,
+            });
+
+            const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            const regionLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/wfs", {
+                        layers: "nz_crime:Final_region",
+                        CQL_FILTER: 2020,
+                        style: regionStyle,
+                        onEachFeature: regionOnEachFeature,
+                        success: function(data) {
+                            console.log("WFS data loaded successfully.");
+                        },
+                        error: function(err) {
+                            console.error("Error loading WFS data:", err);
+                        }
+            }).addTo(map);
+        </script>
+    </body>
+</html>
+
+<!--
+
+    CORS (Cross-Origin Resource Sharing) is a security feature implemented by web browsers 
+    that controls how web applications from different origins (domains, protocols, or ports) 
+    can interact with each other. It determines whether a browser will allow a web page to 
+    request resources (like APIs or data) from a domain different from the one the web page 
+    is hosted on.
+
+    Web browsers, for security reasons, restrict web pages from making requests to a different 
+    domain than the one that served the web page. This is called the same-origin policy. Without 
+    CORS, a website could potentially make unauthorized requests to sensitive data from another domain.
+
+    For example:
+
+    If your website is hosted at http://example.com, and you want to fetch data from http://api.example.com 
+    or http://anotherdomain.com, the browser will block the request unless the target server allows it through CORS.
+-->
+
+
