@@ -2,21 +2,20 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>NZ Crime Interactive Map</title>
+        <title>NZ Crime Interactive</title>
 
         <!--leaflet css-->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
           integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
           crossorigin="" />
-    
+
         <!--leaflet js-->
         <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
             integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-            crossorigin=""></script>
+            crossorigin=""></script> 
 
         <!--leaflet label css-->
         <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-
 
         <!-- jquery link -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -26,16 +25,289 @@
         <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
         <style>
-            #nz_region {
-                height: 100vh;
+
+            #nz_region{
+                position: relative;
+                height: 100vh
             }
+
+            #conditions {
+                position: absolute;
+                background-color: rgba(128, 128, 128, 0.137);
+                border-radius: 30px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                top: 10px;
+                left: 10px;
+                width: 300px;
+                height: 250px;
+                z-index: 800;
+            }
+
+            .filter_container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px; /* Space between each filter item */
+            }
+
+            .filter_items{
+                display: flex;
+                flex-direction: column;
+            }
+
+
+            .filter-items label{
+                margin-bottom: 5px;
+                font-weight: bold;
+                opacity: 0.8;
+            }
+
+            .filter-item input {
+                display: relative;
+                padding: 10px;
+                border: none;
+                border-radius: 4px;
+                background-color: white;
+                color: black;
+                font-size: 16px;
+                outline: none;
+            }
+
+            .filter-items select{
+                padding: 10px;
+                border: none;
+                border-radius: 4px;
+                background-color: white;
+                color: black;
+                font-size: 16px;
+                outline: none;
+                cursor: pointer;
+            }
+
+            .filter-items button{
+                padding: 10px;
+                border: none;
+                border-radius: 4px;
+                background-color: lightcyan;
+                color: black;
+                font-size: 16px;
+                outline: none;
+                cursor: pointer;
+            }
+
+            datalist {
+                display: none;
+            }
+
         </style>
     </head>
-
     <body>
-        <div id="nz_region"></div>
+
+        <div id="nz_region">
+            <div id="conditions">
+                <div id="filter">
+                    <div class="filter_container">
+
+                        <div class="filter_items"></div>
+                            <h id="filter_label">Filters</h>
+                        </div>
+
+
+                        <div class="filter_items">
+                            <label for="regions">Regions</label>
+                            <input type="text" list="regions_nz" placeholder="All New Zealand" />
+                            <datalist id="regions_nz">
+                                <option value="All New Zealand">All New Zealand</option>
+                                <option value="All New Zealand">Auckland</option>
+                                <option value="All New Zealand">Otago</option>
+                                <option value="All New Zealand">Weillington</option>
+                                <option value="All New Zealand">Canterbury</option>    
+                            </datalist>
+                        </div>
+
+                        <div class="filter_items">
+                            <label for="area_units">Suburbs</label>
+                            <input type="text" id="area_units" value="All Suburbs" oninput="filterAreaUnitSuggestions()" />
+                            <div class="suggestions" id="areaUnit-suggestions"></div>
+                            <!--
+                            <select id="area_unit">
+                                <option value="All Suburbs" selected>All Suburbs</option>
+                                <option value="Karikari Peninsula-Maungataniwha">Karikari Peninsula-Maungataniwha</option>
+                                <option value="Taipa Bay-Mangonui">Taipa Bay-Mangonui</option>
+                                <option value="Herekino">Herekino</option>
+                                <option value="Ahipara">Ahipara</option>
+                            </select>
+                            -->
+                        </div>
+
+                        <div class="filter_items">
+                            <label for="offence_types">Offence Types</label>
+                            <select id="offence_types">
+                                <option value="All Offence Types" selected>All Offence Types</option>
+                                <option value="Abduction,Harassment and Related Offences">Abduction,Harassment and Related Offences</option>
+                                <option value="Acts Intended to Cause Injury">Acts Intended to Cause Injury</option>
+                                <option value="Robbery, Extortion and Related Offences">Robbery, Extortion and Related Offences</option>
+                                <option value="Sexual Assault and Related Offences">Sexual Assault and Related Offences</option>
+                                <option value="Theft and Related Offences">Theft and Related Offences</option>
+                                <option value="Unlawful Entry With Intent">Unlawful Entry With Intent</option>
+                            </select>
+                        </div>
+
+                        <div class="filter_items">
+                            <label for="year">Year</label>
+                            <select id="year">
+                                <option value="2023" selected>2023</option>
+                                <option value="2022">2022</option>
+                                <option value="2021">2021</option>
+                                <option value="2020">2020</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-items">
+                            <button id="submission" onclick="submitForm()">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
 
         <script>
+
+            let regionLayer, areaUnitLayer;
+
+            const areaUnits = ["All Suburb"];
+            const regions = [];
+
+        
+            // get all regions using api
+            const geoServerWFSRegionsUrl = 'http://localhost:8080/geoserver/nz_crime/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=nz_crime:regional-council-2023-generalised&outputFormat=application/json';
+            
+            // Function to fetch and append regions from GeoServer
+            function fetchAndAppendRegions() {
+                fetch(geoServerWFSRegionsUrl)
+                    .then(response => {
+                        if(!response.ok){
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })  // Parse JSON response
+                    .then(data => {
+                        const features = data.features;  // GeoJSON feature collection
+                        features.forEach(feature => {
+                            const region = feature.properties.REGC2023_V1_00_NAME;  // Access the 'area_unit' property
+                            if (!regions.includes(region)) {
+                                regions.push(region);  // Append area unit if it's not already in the array
+                            }
+                        });
+                        console.log('Updated regions:', regions);  // Output updated array to console
+                        })
+                        .catch(error => {
+                        console.error('Error fetching data from GeoServer:', error);
+                });
+            }
+
+            // GeoServer WFS URL - replace with the correct GeoServer URL
+            const geoServerWFSAreaUnitUrl = 'http://localhost:8080/geoserver/nz_crime/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=nz_crime:area-unit-2013&outputFormat=application/json';
+
+            // Function to fetch and append area units from GeoServer
+            function fetchAndAppendAreaUnits() {
+            fetch(geoServerWFSAreaUnitUrl)
+                .then(response => response.json())  // Parse JSON response
+                .then(data => {
+                const features = data.features;  // GeoJSON feature collection
+                features.forEach(feature => {
+                    const areaUnit = feature.properties.AU2013_V1_00_NAME;  // Access the 'area_unit' property
+                    if (!areaUnits.includes(areaUnit)) {
+                    areaUnits.push(areaUnit);  // Append area unit if it's not already in the array
+                    }
+                });
+                console.log('Updated areaUnits:', areaUnits);  // Output updated array to console
+                })
+                .catch(error => {
+                console.error('Error fetching data from GeoServer:', error);
+                });
+            }
+
+            // Call the function to fetch and append area units
+            
+            function appendRegionOptions() {
+                const regions_nz = document.getElementById('regions_nz');
+                  // Clear existing options
+
+                regions.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region;
+                    regions_nz.appendChild(option);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                fetchAndAppendRegions();
+                fetchAndAppendAreaUnits();
+                appendRegionOptions();
+            });
+            
+            
+
+            //function to filter suggestions based on input
+            function filterRegionSuggestions(){
+                const input = document.getElementById("regions").value.toLowerCase();
+                const suggestionsContainer = document.getElementById('region-suggestions');
+
+                if(input){
+                    const filtered = regions.filter(unit => unit.toLocaleLowerCase().startsWith(input));
+                    console.log(filtered);
+
+                    if (filtered.length > 0) {
+                        suggestionsContainer.innerHTML='';
+                        filtered.forEach(unit => {
+                            const suggestions = document.createElement('div');
+                            suggestions.textContent = unit;
+                            suggestions.onclick = () => selectRegionSuggestions(unit);
+                            
+                            if (!Array.from(suggestionsContainer.children).some(child => child.textContent === unit)) {
+                                suggestionsContainer.appendChild(suggestions);
+                                console.log('After adding suggestion:', suggestionsContainer.innerHTML);
+                            }
+                        });
+                    } else {
+                        console.log('No suggestions found.'); // 如果没有建议，这行可以帮助确认
+                    }
+                }
+            }
+
+            function selectRegionSuggestions(unit){
+                document.getElementById('regions').value = unit;
+                document.getElementById('region-suggestions').innerHTML = '';
+            }
+
+            //function to filter suggestions based on input
+            function filterAreaUnitSuggestions(){
+                const input = document.getElementById("area_units").value.toLowerCase();
+                const suggestionsContainer = document.getElementById('areaUnit-suggestions');
+
+                suggestionsContainer.innerHTML='';
+
+                if(input){
+                    const filtered = areaUnits.filter(unit => unit.toLocaleLowerCase().startsWith(input));
+
+                    filtered.forEach(unit => {
+                        const suggestions = document.createElement('div');
+                        suggestions.textContent = unit;
+                        suggestions.onclick = () => selectAreaUnitSuggestions(unit);
+                        suggestionsContainer.appendChild(suggestions);
+                    });
+                }
+            }
+
+            function selectAreaUnitSuggestions(unit){
+                document.getElementById('area_units').value = unit;
+                document.getElementById('areaUnit-suggestions').innerHTML = '';
+            }
+
             function getRegionColor(popCrime) {
                 return popCrime > 100000 ? '#990000' :
                        popCrime > 60000  ? '#B20000' : 
@@ -53,6 +325,16 @@
 
             }
 
+            function getAreaUnitColor(popCrime) {
+                return popCrime > 4000 ? '#990000' :
+                    popCrime > 3000  ? '#B20000' : 
+                    popCrime > 2000  ? '#CC0000' :
+                    popCrime > 1000  ? '#E60000' :
+                    popCrime > 500  ? '#FF6666' :
+                    popCrime > 100  ?'#FF9999':'#FFCCCC';
+
+            }
+            
             function regionStyle(feature){
                 return{
                     weight: 1,
@@ -64,6 +346,19 @@
 
                 }
             }
+
+            function area_unitStyle(feature){
+                return{
+                    weight: 1,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: '3', //move any dashed lines on the border, make the outline solid
+                    fillOpacity: 0.7,
+                    fillColor: getAreaUnitColor(feature.properties.annual_area_victimisations)
+
+                }
+            }
+
 
             function highlightFeature(e) {
                 const layer = e.target;
@@ -79,7 +374,7 @@
                     layer.bringToFront();
                 }
             }
-            
+
             function resetRegionHighlight(e) {
                 e.target.setStyle({
                     weight: 1,
@@ -91,8 +386,90 @@
                 });
             }
 
+            function resetAreaHighlight(e) {
+                e.target.setStyle({
+                    weight: 1,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: '3',
+                    fillOpacity: 0.7,
+                    fillColor: getAreaUnitColor(e.target.feature.properties.annual_area_victimisations)
+                });
+            }
+
             function zoomToFeature(e){
                 map.fitBounds(e.target.getBounds());
+            }
+
+            function area_unitCrimeLayer(year, regionName){
+                if (areaUnitLayer){
+                    map.removeLayer(areaUnitLayer);
+                }
+
+                areaUnitLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/wfs", {
+                        layers: "nz_crime:Final_area_unit",
+                        CQL_FILTER: "Year = " + year + "AND Region = '" + regionName + "'",
+                        style: area_unitStyle,
+                        onEachFeature: area_unitOnEachFeature,
+                        success: function(data) {
+                            console.log("WFS data loaded successfully.");
+                        },
+                        error: function(err) {
+                            console.error("Error loading WFS data:", err);
+                        }
+                    }).addTo(map);
+            }
+
+            function regionCrimeLayer(year){
+                if (regionLayer){
+                    map.removeLayer(regionLayer);
+                }
+
+                regionLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/wfs", {
+                        layers: "nz_crime:Final_region",
+                        CQL_FILTER: "Year = " + year,
+                        style: regionStyle,
+                        onEachFeature: regionOnEachFeature,
+                        success: function(data) {
+                            console.log("WFS data loaded successfully.");
+                        },
+                        error: function(err) {
+                            console.error("Error loading WFS data:", err);
+                        }
+                    }).addTo(map);
+            }
+
+
+
+            function area_unitOnEachFeature(feature, layer){
+                var popupContent = `<b>Area Unit:</b> ${feature.properties.Area_Unit} <br /> 
+                                    <b>Year:</b> ${feature.properties.Year} <br /> 
+                                    <b>Total Crime:</b> ${feature.properties.annual_area_victimisations} <br />
+                                    <b>----------------</b> <br>
+                                    <b>Abduction,Harassment and Related Offences:</b> ${feature.properties.Abduction_Harassment_Related} <br />
+                                    <b>Acts Intended to Cause Injury:</b> ${feature.properties.Acts_Intended_to_Cause_Injury} <br />
+                                    <b>Robbery, Extortion and Related Offences:</b> ${feature.properties.Robbery_Extortion_Related} <br />
+                                    <b>Sexual Assault and Related Offences:</b> ${feature.properties.Sexual_Assault_Related} <br />
+                                    <b>Theft and Related Offences:</b> ${feature.properties.Theft_Related} <br />
+                                    <b>Unlawful Entry With Intent:</b> ${feature.properties.Unlawful_Entry_With_Intent} <br />`;
+
+
+                layer.bindPopup(popupContent)
+
+                layer.on('mouseover', function (e){
+                    highlightFeature(e);
+                    this.openPopup();
+                });
+
+                layer.on('mouseout', function (e) {
+                    resetAreaHighlight(e);
+                    this.closePopup();
+                });
+
+                layer.on('click', function (e){
+                    zoomToFeature(e);
+                });
+
             }
 
             function regionOnEachFeature(feature, layer){
@@ -122,53 +499,39 @@
 
                 layer.on('click', function (e){
                     zoomToFeature(e);
-                    
+
+                    // cancle onEachFeature
+                    layer.off({
+                        mouseover: highlightFeature, 
+                        mouseout: resetRegionHighlight,  
+                    });
+
+                    map.removeLayer(layer);
+
+                    const region_name = e.target.feature.properties.Region;
+                    const currentYear = e.target.feature.properties.Year;
+                    area_unitCrimeLayer(currentYear, region_name);
                 });
 
             }
 
-            const map = L.map("nz_region", {
+            const map = L.map('nz_region', {
                 center: [-40.30, 174.25],
                 zoom: 6,
+                zoomControl: false
             });
+
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
 
             const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
-            const regionLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/wfs", {
-                        layers: "nz_crime:Final_region",
-                        CQL_FILTER: 2020,
-                        style: regionStyle,
-                        onEachFeature: regionOnEachFeature,
-                        success: function(data) {
-                            console.log("WFS data loaded successfully.");
-                        },
-                        error: function(err) {
-                            console.error("Error loading WFS data:", err);
-                        }
-            }).addTo(map);
+            // add regional crime data to map
+            regionCrimeLayer(2020);
         </script>
     </body>
 </html>
-
-<!--
-
-    CORS (Cross-Origin Resource Sharing) is a security feature implemented by web browsers 
-    that controls how web applications from different origins (domains, protocols, or ports) 
-    can interact with each other. It determines whether a browser will allow a web page to 
-    request resources (like APIs or data) from a domain different from the one the web page 
-    is hosted on.
-
-    Web browsers, for security reasons, restrict web pages from making requests to a different 
-    domain than the one that served the web page. This is called the same-origin policy. Without 
-    CORS, a website could potentially make unauthorized requests to sensitive data from another domain.
-
-    For example:
-
-    If your website is hosted at http://example.com, and you want to fetch data from http://api.example.com 
-    or http://anotherdomain.com, the browser will block the request unless the target server allows it through CORS.
--->
-
-
