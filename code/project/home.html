@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/styles.css">
+        <title>New Zealand Crime Map</title>
+
+        <!--Chart.js is a free JavaScript library for making HTML-based charts.
+            It's one of the simplest visualization libraries for JavaScript. -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- leaflet css-->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+        crossorigin="" />
+
+        <!--leaflet js-->
+        <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+        crossorigin=""></script>
+
+        <!--leaflet label css-->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+        <!-- jquery link -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <!-- leaflet GeoServer request link-->
+        <script src="lib/src/L.Geoserver.js"></script>
+
+        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    </head>
+
+    <body>
+        <div id="navbar">
+            <h1>NZ Online Crime Map</h1>
+        </div>
+        
+        <div id="main_container">
+            <!-- Map Section -->
+            <div id="nz_region">
+                <div id="filter_container">
+                    <div class="conditions">
+                        <label>Filters</label>
+                    </div>
+        
+                    <div class="conditions">
+                        <input type="text" class="input" id="region_input" value="All NZ" />
+                        <button class="button" id="region_button">&#9662;</button>
+                        <div class="suggestion" id="region_suggestions"></div>
+                    </div>
+        
+                    <div class="conditions">
+                        <input type="text" class="input" id="suburb_input" value="All suburbs" disabled />
+                        <button class="button" id="suburb_button" disabled>&#9662;</button>
+                        <div class="suggestion" id="suburb_suggestions"></div>
+                    </div>
+        
+                    <div class="conditions">
+                        <select id="offence_types">
+                            <option value="All Offence Types" selected>All Offence Types</option>
+                            <option value="Abduction, Harassment and Related Offences">Abduction, Harassment and Related Offences</option>
+                            <option value="Acts Intended to Cause Injury">Acts Intended to Cause Injury</option>
+                            <option value="Robbery, Extortion and Related Offences">Robbery, Extortion and Related Offences</option>
+                            <option value="Sexual Assault and Related Offences">Sexual Assault and Related Offences</option>
+                            <option value="Theft and Related Offences">Theft and Related Offences</option>
+                            <option value="Unlawful Entry With Intent">Unlawful Entry With Intent</option>
+                        </select>
+                    </div>
+        
+                    <div class="conditions">
+                        <select id="year">
+                            <option value="2023" selected>2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                        </select>
+                    </div>
+        
+                    <div class="conditions">
+                        <button class="submission" id="submission">Search</button>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Graph Section -->
+            <div id="graph_view">
+                <canvas id="lineChart" height="300"></canvas>
+                <canvas id="pieChart" height="300"></canvas>
+            </div>
+        </div>
+        
+
+        <script type="module" src="js/choroplethMapstyle.js"></script>
+        <script type="module" src="js/crime_layer.js"></script>
+        <script type="module" src="js/crimeGraphs.js"></script>
+        <script type="module" src="js/data.js"></script>
+        <script type="module" src="js/event.js"></script>
+
+        <script>
+
+            //map creation
+            const map = L.map('nz_region', {
+                center: [-36.850109, 174.76],
+                zoom: 15,
+                zoomControl: false
+            });
+
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
+
+            const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+        </script>
+    </body>
+    
+</html>

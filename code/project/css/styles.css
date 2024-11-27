@@ -1,0 +1,140 @@
+/* General Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+#navbar {
+    height: 5vh;
+    background-color: #003366; /* Professional dark blue */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#navbar h1 {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+/* Main Container */
+#main_container {
+    display: flex;
+    height: 95vh;
+    overflow: hidden;
+}
+
+/* Map Section */
+#nz_region {
+    flex: 1;
+    position: relative;
+    transition: flex 0.3s ease-in-out;
+    background-color: #e8f4fa; /* Light blue */
+}
+
+/* Graph Section */
+#graph_view {
+    flex: 0;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f5f5f5; /* Light gray */
+    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.1);
+    transition: flex 0.3s ease-in-out;
+}
+
+/* Filter Container */
+#filter_container {
+    position: absolute;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: white;
+    padding: 15px;
+    top: 20px;
+    left: 20px;
+    width: 280px;
+    z-index: 800;
+}
+
+/* Filter Inputs */
+.conditions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.conditions label {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.conditions input, .conditions select, .conditions button {
+    width: 100%;
+    height: 30px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.conditions button {
+    background-color: #007acc; /* Light blue button */
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.conditions button:hover {
+    background-color: #005f99; /* Darker blue on hover */
+}
+
+/* Suggestions Dropdown */
+.suggestion {
+    position: absolute;
+    background-color: white;
+    color: black;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.suggestion div {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion div:hover {
+    background-color: #f0f0f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #main_container {
+        flex-direction: column;
+    }
+
+    #nz_region, #graph_view {
+        flex: 1;
+    }
+
+    #filter_container {
+        position: static;
+        width: 100%;
+    }
+}
