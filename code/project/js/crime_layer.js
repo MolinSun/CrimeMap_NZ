@@ -1,5 +1,5 @@
 import {regionOffenceTypeColor, area_unitOffenceTypeColor} from './choroplethMapstyle.js';
-import {crimeTrend, crimeTypePieChart} from "./crimeGraphs.js";
+import {regionCrimeTrend, regionCrimeTypePieChart, areaUnitCrimeTrend, areaUnitCrimeTypePieChart} from "./crimeGraphs.js";
 
 let regionLayer, area_unitLayer;
 export const mapView = document.getElementById('nz_region');
@@ -85,6 +85,17 @@ function area_unitOnEachFeature(feature, layer, offenceType){
 
     layer.on('click', function (e){
         zoomToFeature(e);
+
+        mapView.style.flex = '2';
+        graphView.style.display = 'flex';
+        graphView.offsetHeight;
+        graphView.style.flex = '1';
+
+        const areaUnit = e.target.feature.properties.Area_Unit;
+        const currentYear = e.target.feature.properties.Year;
+        
+        areaUnitCrimeTrend(areaUnit, offenceType, currentYear);
+        areaUnitCrimeTypePieChart(areaUnit, offenceType, currentYear);
     });
 }
 
@@ -149,9 +160,11 @@ function regionOnEachFeature(feature, layer, offenceType){
         graphView.offsetHeight;
         graphView.style.flex = '1';
 
-        crimeTrend(region_name, currentYear);
-        crimeTypePieChart(region_name, currentYear);
-        
+
+        regionCrimeTrend(region_name, offenceType, currentYear);
+        regionCrimeTypePieChart(region_name, offenceType, currentYear);
+ 
+
     });
 
 }
@@ -239,7 +252,7 @@ function regionCrimeLayer(year, regionName, offenceType = "All Offence Types"){
         error: function(err) {
             console.error("Error loading WFS data:", err);
         }
-    }).addTo(map);
+    }).addTo(map);       
 }
 
 export {allArea_unitCrimeLayer, area_unitCrimeLayer, allRegionCrimeLayer, regionCrimeLayer, regionLayer, area_unitLayer};

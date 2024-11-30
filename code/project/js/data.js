@@ -13,6 +13,8 @@ let nationwideData = Array(yearsLabel.length).fill(0);
 let nationwideTypeData = {};
 let regionTotals = {};
 let regionCrimeType = {};
+let areaUnitTotals = {};
+let areaUnitCrimeType = {};
 
 const geoServerWFSRegionsUrl = 'http://localhost:8080/geoserver/nz_crime/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=nz_crime:Final_region&outputFormat=application/json';
 async function fetchCrimeData(){
@@ -80,7 +82,8 @@ async function fetchCrimeData(){
 
 
 // GeoServer WFS URL
-const geoServerWFSAreaUnitUrl = 'http://localhost:8080/geoserver/nz_crime/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=nz_crime:Final_area_unit_geo_data&outputFormat=application/json';
+const geoServerWFSAreaUnitUrl = 'http://localhost:8080/geoserver/nz_crime/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=nz_crime:Final_area_unit&outputFormat=application/json';
+
 
 function fetchAndAppendAreaUnits(){
     fetch(geoServerWFSAreaUnitUrl)
@@ -91,6 +94,17 @@ function fetchAndAppendAreaUnits(){
 
                 const region = feature.properties.Region;
                 const areaUnit = feature.properties.Area_Unit;
+                const currentYear = feature.properties.Year;
+                const crimeTypes = {
+                    'Abduction, Harassment and Related Offences': feature.properties.Abduction_Harassment_Related,
+                    'Acts Intended to Cause Injury': feature.properties.Acts_Intended_to_Cause_Injury,
+                    'Robbery, Extortion and Related Offences': feature.properties.Robbery_Extortion_Related,
+                    'Sexual Assault and Related Offences': feature.properties.Sexual_Assault_Related,
+                    'Theft and Related Offences': feature.properties.Theft_Related,
+                    'Unlawful Entry With Intent': feature.properties.Unlawful_Entry_With_Intent,
+                };
+
+                const yearIndex = yearsLabel.indexOf(currentYear);
 
                 if(!locationData[region]){
                     locationData[region] = ['All suburbs'];
@@ -99,6 +113,25 @@ function fetchAndAppendAreaUnits(){
                 if(!locationData[region].includes(areaUnit)){
                     locationData[region].push(areaUnit);
                 }
+
+                if (!areaUnitTotals[areaUnit]){
+                    areaUnitTotals[areaUnit] = [];
+                }
+                areaUnitTotals[areaUnit][yearIndex] = feature.properties.annual_area_victimisations;
+    
+
+                if (!areaUnitCrimeType[areaUnit]) {
+                    areaUnitCrimeType[areaUnit] = {};
+                }
+                if (!areaUnitCrimeType[areaUnit][currentYear]) {
+                    areaUnitCrimeType[areaUnit][currentYear] = {};
+                }
+    
+                Object.keys(crimeTypes).forEach((type) => {
+    
+                    areaUnitCrimeType[areaUnit][currentYear][type] = crimeTypes[type];
+
+                });
     
             });
         })
@@ -111,8 +144,10 @@ async function updateLocationData() {
     fetchCrimeData();
     await fetchAndAppendAreaUnits();
     console.log('Update locationData:', locationData);
+    console.log('Update total area unit crime', areaUnitTotals);
+    console.log('Update area unit crime data by types', areaUnitCrimeType);
 }
 
 updateLocationData();
 
-export {locationData, yearsLabel, nationwideData, nationwideTypeData, regionTotals, regionCrimeType};
+export {locationData, yearsLabel, nationwideData, nationwideTypeData, regionTotals, regionCrimeType, areaUnitTotals, areaUnitCrimeType};

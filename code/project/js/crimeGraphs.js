@@ -1,4 +1,5 @@
-import {yearsLabel, nationwideData, nationwideTypeData, regionTotals, regionCrimeType} from "./data.js";
+
+import {yearsLabel, nationwideData, nationwideTypeData, regionTotals, regionCrimeType, areaUnitTotals, areaUnitCrimeType} from "./data.js";
 
 let crimeChart, crimePieChart;
 
@@ -22,6 +23,10 @@ function nationwideCrimeTrend(offenceType, year){
     }
 
     const yearIndex = yearsLabel.indexOf(Number(year));
+    if (yearIndex === -1) {
+        console.error("Invalid yearIndex. The selected year is not found in yearsLabel.");
+        return; // 停止执行代码
+    }
     
     crimeChart = new Chart('lineChart', {
         type: 'line',
@@ -29,7 +34,7 @@ function nationwideCrimeTrend(offenceType, year){
             labels:yearsLabel,
             datasets: [
                 {
-                    label: 'Total crime victimisations',
+                    label: offenceType === 'All Offence Types' ? 'Total crime victimisations' : offenceType,
                     data: offenceType === 'All Offence Types' ? nationwideData : nationwideTypeData[offenceType],
                     borderColor: 'rgba(75, 192, 192, 0.2)',
                     pointBackgroundColor: yearsLabel.map((_, i) =>
@@ -67,14 +72,14 @@ function nationwideCrimeTrend(offenceType, year){
             },
             title: {
                 display: true,
-                text: "Last 4 year crime trend in New Zealand"
+                text: offenceType === 'All Offence Types' ? "Last 4 year crime trend in New Zealand" : offenceType + " crime trend"
             }
         },
     },
     })
 }
 
-function nationwideCrimeTypePieChart(year){
+function nationwideCrimeTypePieChart(offenceType, year){
 
 
     if(crimePieChart){
@@ -84,29 +89,31 @@ function nationwideCrimeTypePieChart(year){
     
     const yearIndex = yearsLabel.indexOf(Number(year));
 
-    console.log("current year", year);
-
     if (yearIndex === -1) {
         console.error("Invalid yearIndex. The selected year is not found in yearsLabel.");
-        return; // 停止执行代码
+        return; 
     }
 
-    const nationwideTypeCrimeData = {};
-    crimeTypeArray.forEach((type) => {
-        nationwideTypeCrimeData[type] = nationwideTypeData[type][yearIndex]; 
-    })
+    
+    const data = crimeTypeArray.map(type => nationwideTypeData[type][yearIndex]); // 数据
+    let backgroundColors;
 
-    console.log(year);
-    console.log(yearIndex);
-    console.log(nationwideTypeCrimeData)
+    if (offenceType === "All Offence Types") {
+        backgroundColors = colors;
+    } else {
+        const offenceIndex = crimeTypeArray.indexOf(offenceType);
+        backgroundColors = crimeTypeArray.map(type =>
+            type === offenceType ? colors[offenceIndex] : "rgba(200, 200, 200, 0.5)" // 高亮或灰色
+        );
+    }
 
     crimePieChart = new Chart('pieChart', {
-        type: 'pie',
+        type: 'doughnut',
         data:{
             labels: crimeTypeArray,
             datasets:[{
-                data: Object.values(nationwideTypeCrimeData),
-                backgroundColor: colors,
+                data: data,
+                backgroundColor: backgroundColors,
                 borderWidth: 1, // Border width for each slice
                 borderColor: 'rgba(255, 255, 255, 1)' // Border color
             }] 
@@ -123,22 +130,34 @@ function nationwideCrimeTypePieChart(year){
                 },
                 title: {
                     display: true,
-                    text: "Offence types in New Zealand"
+                    text: "Offence Types in " + year
                 }
-            }
+            },
+            cutout: '50%' 
         }
     });
 }
 
 
-function crimeTrend(regionName, offenceType, year){
+function regionCrimeTrend(regionName, offenceType, year){
 
     if(crimeChart){
         crimeChart.destroy(); 
         crimeChart = null;
     }
+    let data = []
+    if(offenceType !== "All NZ"){
+        yearsLabel.forEach((yearLabel) => {
+            data = regionCrimeType[regionName][yearLabel][offenceType];
+        })
+    }
 
-    const yearIndex = yearsLabel.indexOf(year);
+    const yearIndex = yearsLabel.indexOf(Number(year)); 
+
+    if (yearIndex === -1) {
+        console.error("Invalid yearIndex. The selected year is not found in yearsLabel.");
+        return; 
+    }
     
     crimeChart = new Chart('lineChart', {
         type: 'line',
@@ -146,27 +165,14 @@ function crimeTrend(regionName, offenceType, year){
             labels:yearsLabel,
             datasets: [
                 {
-                    label: 'Total Crimes Nationwide',
-                    data: nationwideData,
-                    borderColor: 'rgba(75, 192, 192, 0.2)',
-                    pointBackgroundColor: yearsLabel.map((_, i) =>
-                        i === yearIndex ? 'rgba(75, 192, 192, 1)' : 'rgba(75, 192, 192, 0.5)'
-                    ), // Highlight specific year's point
-                    pointRadius: yearsLabel.map((_, i) => (i === yearIndex ? 8 : 3)), // Make the point bigger for the selected year
-                    pointHoverRadius: yearsLabel.map((_, i) => (i === yearIndex ? 10 : 5)), // Hover size
-                    fill: false,
-                    tension: 0.4
-                },
-                {
-                    label: 'Total Crimes in ' + regionName,
-                    data: regionTotals[regionName],
+                    label: offenceType === 'All Offence Types' ? 'Total Crimes in ' + regionName : offenceType + " in " + regionName,
+                    data: offenceType === 'All Offence Types' ? regionTotals[regionName] : data,
                     borderColor: 'rgba(255, 99, 132, 1)',
                     pointBackgroundColor: yearsLabel.map((_, i) =>
                         i === yearIndex ? 'rgba(255, 99, 132, 1)' : 'rgba(255, 99, 132, 0.5)'
                     ), // Highlight specific year's point
                     pointRadius: yearsLabel.map((_, i) => (i === yearIndex ? 8 : 3)), // Make the point bigger for the selected year
                     pointHoverRadius: yearsLabel.map((_, i) => (i === yearIndex ? 10 : 5)), // Hover size
-                    
                     fill: false,
                     tension: 0.4
                 },
@@ -177,34 +183,34 @@ function crimeTrend(regionName, offenceType, year){
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                display: false,
-            },
-            scales:{    //配置x轴和y轴
-                x:{
-                    display: true,  //是否显示轴
-                    title:{         //轴标题
+                    display: false,
+                },
+                scales:{    //配置x轴和y轴
+                    x:{
+                        display: true,  //是否显示轴
+                        title:{         //轴标题
+                            display: true,
+                            text: 'year'
+                        }
+                    },
+                    y: {
                         display: true,
-                        text: 'year'
+                        title: {
+                            display: true,
+                            text: 'total crime victimisations'
+                        }
                     }
                 },
-                y: {
+                title: {
                     display: true,
-                    title: {
-                        display: true,
-                        text: 'total crime victimisations'
-                    }
+                    text: "Last 4 year crime trend " + regionName
                 }
             },
-            title: {
-                display: true,
-                text: "Recent 4 year crime trend"
-            }
         },
-    },
     })
 }
 
-function crimeTypePieChart(regionName, year){
+function regionCrimeTypePieChart(regionName, offenceType, year){
 
     if(crimePieChart){
         crimePieChart.destroy(); 
@@ -213,13 +219,24 @@ function crimeTypePieChart(regionName, year){
     const crimeData = regionCrimeType[regionName][year];
     const crimeValues = Object.values(crimeData);
 
+    let backgroundColors;
+
+    if (offenceType === "All Offence Types") {
+        backgroundColors = colors;
+    } else {
+        const offenceIndex = crimeTypeArray.indexOf(offenceType);
+        backgroundColors = crimeTypeArray.map(type =>
+            type === offenceType ? colors[offenceIndex] : "rgba(200, 200, 200, 0.5)" 
+        );
+    }
+
     crimePieChart = new Chart('pieChart', {
         type: 'pie',
         data:{
             labels: crimeTypeArray,
             datasets:[{
                 data: crimeValues,
-                backgroundColor: colors,
+                backgroundColor: backgroundColors,
                 borderWidth: 1, // Border width for each slice
                 borderColor: 'rgba(255, 255, 255, 1)' // Border color
             }] 
@@ -236,12 +253,137 @@ function crimeTypePieChart(regionName, year){
                 },
                 title: {
                     display: true,
-                    text: "Offence types in " + regionName
+                    text: "Offence Types in " + year
                 }
-            }
+            },
+            cutout: '50%'
         }
     });
 }
 
-export {nationwideCrimeTrend, nationwideCrimeTypePieChart, crimeTrend, crimeTypePieChart};
+function areaUnitCrimeTrend(areaUnit, offenceType, year){
+
+    if(crimeChart){
+        crimeChart.destroy();
+        crimeChart = null;
+    }
+
+    let data = []
+
+    if(offenceType != "All NZ"){
+        yearsLabel.forEach((yearLabel) => {
+            data = areaUnitCrimeType[areaUnit][yearLabel][offenceType];
+        })
+    }
+
+    const yearIndex = yearsLabel.indexOf(Number(year));
+
+    if(yearIndex === -1){
+        console.log("Invalid yearIndex, The selected year is not found in yearsLabel.");
+        return;
+    }
+
+    crimeChart = new Chart('lineChart', {
+        type: 'line',
+        data:{
+            labels:yearsLabel,
+            datasets: [ 
+            {
+                label: offenceType === "All Offence Types" ? 'Total crime victimisations in ' + areaUnit : offenceType + " in " + areaUnit,
+                data: offenceType === "All Offence Types" ? areaUnitTotals[areaUnit] : data,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                pointBackgroundColor: yearsLabel.map((_, i) =>
+                    i === yearIndex ? 'rgba(255, 99, 132, 1)' : 'rgba(255, 99, 132, 0.5)'
+                ),
+                pointRadius:yearsLabel.map((_, i) => (i === yearIndex ? 8 : 3)),
+                pointHoverRadius: yearsLabel.map((_, i) => (i === yearIndex ? 10 : 5)),
+                fill: false,
+                tension: 0.4
+            },
+            ]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins:{
+                legend: {
+                    display: false,
+                },
+                scales:{
+                    x:{
+                        display: true,
+                        title:{
+                            display:true,
+                            text: 'year'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'total crime victimisations'
+                        }
+                    }
+                },
+                title:{
+                    display: true,
+                    text: "Last 4 year crime trend " + areaUnit
+                }
+            },
+        },
+
+        
+    })
+
+}
+
+function areaUnitCrimeTypePieChart(areaUnit, offenceType, year){
+    if (crimePieChart){
+        crimePieChart.destroy();
+        crimePieChart = null;
+    }
+    const crimeData = areaUnitCrimeType[areaUnit][year];
+    const crimeValues = Object.values(crimeData);
+
+    let backgroundColors;
+
+    if(offenceType === "All Offence Types"){
+        backgroundColors = colors;
+    }else{
+        const offenceIndex = crimeTypeArray.indexOf(offenceType);
+        backgroundColors = crimeTypeArray.map(type => 
+            type === offenceType ? colors[offenceIndex] : "rgba(200, 200, 200, 0.5)"
+        );
+    }
+
+    crimePieChart = new Chart('pieChart', {
+        type: 'pie',
+        data:{
+            labels: crimeTypeArray,
+            datasets:[{
+                data: crimeValues,
+                backgroundColor: backgroundColors,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 1)'
+            }]
+        },
+        options:{
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins:{
+                legend:{
+                    display:false
+                },
+                tooltip:{
+                    display:true,
+                    text: "Offence Types in " + year
+                }
+            },
+            cutout: '50%'
+        }
+    });
+
+}
+
+export {nationwideCrimeTrend, nationwideCrimeTypePieChart, regionCrimeTrend, regionCrimeTypePieChart, areaUnitCrimeTrend, areaUnitCrimeTypePieChart};
 

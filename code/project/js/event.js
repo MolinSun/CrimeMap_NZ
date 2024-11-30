@@ -1,7 +1,6 @@
 import {allRegionCrimeLayer, regionCrimeLayer, area_unitCrimeLayer, regionLayer, area_unitLayer} from "./crime_layer.js";
 import { locationData } from "./data.js";
-import { nationwideCrimeTrend,nationwideCrimeTypePieChart } from "./crimeGraphs.js";
-import { mapView, graphView } from "./crime_layer.js";
+import { areaUnitCrimeTrend, nationwideCrimeTrend,nationwideCrimeTypePieChart } from "./crimeGraphs.js";
 
 const regions = ['All NZ','Auckland Region', 'Bay of Plenty Region', 'Canterbury Region',
     'Gisborne Region', 'Hawke Bay Region', 'Manawatū-Whanganui Region', 'Marlborough Region',
@@ -161,20 +160,35 @@ submitButton.addEventListener('click', (event) => {
     if(isValidRegion && isValidSuburb){
         if(regionName === "All NZ"){
             allRegionCrimeLayer(selectedYear, offence_type);
+            mapView.style.flex = '2';
+            graphView.style.display = 'flex';
+            graphView.offsetHeight;
+            graphView.style.flex = '1';
+    
+            nationwideCrimeTrend(offence_type, selectedYear);
+            nationwideCrimeTypePieChart(offence_type, selectedYear);
         }else if(area_unit === "All suburbs"){
             regionCrimeLayer(selectedYear, regionName, offence_type);
+            mapView.style.flex = '2';
+            graphView.style.display = 'flex';
+            graphView.offsetHeight;
+            graphView.style.flex = '1';
+    
+            regionCrimeTrend(regionName, offence_type, selectedYear);
+            regionCrimeTypePieChart(offence_type, selectedYear);
         }else{
             area_unitCrimeLayer(selectedYear, regionName, area_unit, offence_type);
+            mapView.style.flex = '2';
+            graphView.style.display = 'flex';
+            graphView.offsetHeight;
+            graphView.style.flex = '1';
+    
+            areaUnitCrimeTrend(area_unit, offence_type, selectedYear);
+            areaUnitCrimeTypePieChart(area_unit, offence_type, selectedYear);
+        
         }
     } 
-    
-    mapView.style.flex = '2';
-    graphView.style.display = 'flex';
-    graphView.offsetHeight;
-    graphView.style.flex = '1';
-    
-    nationwideCrimeTrend(offence_type, selectedYear);
-    nationwideCrimeTypePieChart(selectedYear);
+
 })
 
 document.addEventListener('click', (event) => {
