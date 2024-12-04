@@ -29,11 +29,22 @@
         <script src="lib/src/L.Geoserver.js"></script>
 
         <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     </head>
 
     <body>
         <div id="navbar">
+            <button id="menu-button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <h1>NZ Online Crime Map</h1>
+            <button id="info-button">
+                <i class="fa fa-info-circle"></i>
+            </button>
         </div>
         
         <div id="main_container">
@@ -80,15 +91,44 @@
                     <div class="conditions">
                         <button class="submission" id="submission">Search</button>
                     </div>
+
+                </div>
+
+                <div class="map-fullscreen--toggle" id="map-fullscreen--toggle" style="display: none;">
+                    <button id="map_full_screen">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         
             <!-- Graph Section -->
             <div id="graph_view">
-                <canvas id="lineChart" height="300"></canvas>
-                <canvas id="pieChart" height="300"></canvas>
+                <canvas id="lineChart" width="420px" height="420px" padding-left="20px"></canvas>
+                <canvas id="pieChart" width="420px" height="420px" padding-left="20px"></canvas>
             </div>
         </div>
+
+        <div id="overview-modal" class="modal">
+            <div class="modal-content">
+                <h3>Welcome to the NZ Online Crime Map</h3>
+                <p>
+                    This online crime map provides a detailed visualization of crime data in New Zealand, based on official police reports. 
+                    The data includes of offenses recorded over the past four years, offering insights into crime trends and patterns.
+                </p>
+                <p>
+                    Select a area of interest, offence type and year to show corresponding data and figures for the selected area.
+                </p>
+                <p>
+                    For Feedback, Errors or Enhancements, please Email:
+                    momokosun329@gamil.com
+                </p>
+                <div class="modal-button">
+                    <button id="close-modal">CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+
         
 
         <script type="module" src="js/choroplethMapstyle.js"></script>
@@ -107,7 +147,8 @@
             });
 
             L.control.zoom({
-                position: 'topright'
+                position: 'bottomright'
+                
             }).addTo(map);
 
             const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

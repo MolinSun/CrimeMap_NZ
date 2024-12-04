@@ -93,6 +93,13 @@ function area_unitOnEachFeature(feature, layer, offenceType){
 
         const areaUnit = e.target.feature.properties.Area_Unit;
         const currentYear = e.target.feature.properties.Year;
+
+        const full_mapView_toggle = document.getElementById("map-fullscreen--toggle");
+    
+
+        if(full_mapView_toggle.display === "none"){
+            full_mapView_toggle.display = "flex";
+        }
         
         areaUnitCrimeTrend(areaUnit, offenceType, currentYear);
         areaUnitCrimeTypePieChart(areaUnit, offenceType, currentYear);
@@ -160,6 +167,12 @@ function regionOnEachFeature(feature, layer, offenceType){
         graphView.offsetHeight;
         graphView.style.flex = '1';
 
+        const full_mapView_toggle = document.getElementById("map-fullscreen--toggle");
+    
+
+        if(full_mapView_toggle.display === "none"){
+            full_mapView_toggle.display = "flex";
+        }
 
         regionCrimeTrend(region_name, offenceType, currentYear);
         regionCrimeTypePieChart(region_name, offenceType, currentYear);

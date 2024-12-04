@@ -1,6 +1,6 @@
 import {allRegionCrimeLayer, regionCrimeLayer, area_unitCrimeLayer, regionLayer, area_unitLayer} from "./crime_layer.js";
 import { locationData } from "./data.js";
-import { areaUnitCrimeTrend, nationwideCrimeTrend,nationwideCrimeTypePieChart } from "./crimeGraphs.js";
+import { areaUnitCrimeTrend, areaUnitCrimeTypePieChart, regionCrimeTrend, regionCrimeTypePieChart, nationwideCrimeTrend,nationwideCrimeTypePieChart } from "./crimeGraphs.js";
 
 const regions = ['All NZ','Auckland Region', 'Bay of Plenty Region', 'Canterbury Region',
     'Gisborne Region', 'Hawke Bay Region', 'Manawatū-Whanganui Region', 'Marlborough Region',
@@ -15,7 +15,40 @@ const region_dropdown = document.getElementById("region_button");
 const suburb_dropdown = document.getElementById("suburb_button");
 const regionSuggestions = document.getElementById("region_suggestions");
 const suburbSuggeations = document.getElementById("suburb_suggestions");
+const full_mapView_button = document.getElementById("map_full_screen");
+const icon = full_mapView_button.querySelector("i");
+const menu_button = document.getElementById("menu-button");
+const filter = document.getElementById("filter_container");
+const modal = document.getElementById('overview-modal');
+const info_button = document.getElementById('info-button');
 
+
+window.addEventListener('load', () => {
+    modal.style.display = 'flex';
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const infoButton = document.getElementById('info-button');
+    const modal = document.getElementById('overview-modal');
+    const closeModal = document.getElementById('close-modal');
+
+    // Show modal when clicking the info button
+    infoButton.addEventListener('click', () => {
+        modal.style.display = 'flex';
+    });
+
+    // Close modal when clicking the close button
+    closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) { // Ensure the target is the modal background
+            modal.style.display = 'none';
+        }
+    });
+});
 
 function calcuRegionSuggestions(filterRegions){
     regionSuggestions.innerHTML = "";
@@ -73,6 +106,17 @@ function calcuSuburbSuggestions(filterSuburbs){
         suburbSuggeations.display = 'none';
     }
 }
+
+menu_button.addEventListener('click', () => {
+
+    const currentDisplay = window.getComputedStyle(filter).display;
+
+    if(currentDisplay === 'flex'){
+        filter.style.display = 'none';
+    }else{
+        filter.style.display = 'flex';
+    }
+})
 
 region_input.addEventListener('input', () => {
 
@@ -148,6 +192,7 @@ submitButton.addEventListener('click', (event) => {
     const offence_type = document.getElementById("offence_types").value;
     const mapView = document.getElementById('nz_region');
     const graphView = document.getElementById("graph_view");
+    const full_mapView_toggle = document.getElementById("map-fullscreen--toggle");
 
     const isValidRegion = regions.some(region =>
         region.toLowerCase() === regionName.trim().toLowerCase()
@@ -164,32 +209,64 @@ submitButton.addEventListener('click', (event) => {
             graphView.style.display = 'flex';
             graphView.offsetHeight;
             graphView.style.flex = '1';
-    
+
+            if(full_mapView_toggle.style.display === "none"){
+                full_mapView_toggle.style.display = "flex";
+            }
+
+            const computedDisplay = window.getComputedStyle(full_mapView_toggle).display;
+
+            console.log("Inline Display Value:", full_mapView_toggle.style.display);
+
             nationwideCrimeTrend(offence_type, selectedYear);
             nationwideCrimeTypePieChart(offence_type, selectedYear);
+            
         }else if(area_unit === "All suburbs"){
+            console.log(selectedYear);
             regionCrimeLayer(selectedYear, regionName, offence_type);
             mapView.style.flex = '2';
             graphView.style.display = 'flex';
             graphView.offsetHeight;
             graphView.style.flex = '1';
     
+            if(full_mapView_toggle.style.display === "none"){
+                full_mapView_toggle.style.display = "flex";
+            }
+
             regionCrimeTrend(regionName, offence_type, selectedYear);
-            regionCrimeTypePieChart(offence_type, selectedYear);
+            regionCrimeTypePieChart(regionName,offence_type, selectedYear);
         }else{
             area_unitCrimeLayer(selectedYear, regionName, area_unit, offence_type);
             mapView.style.flex = '2';
             graphView.style.display = 'flex';
             graphView.offsetHeight;
             graphView.style.flex = '1';
-    
+
+            if(full_mapView_toggle.style.display === "none"){
+                full_mapView_toggle.style.display = "flex";
+            }
+
             areaUnitCrimeTrend(area_unit, offence_type, selectedYear);
             areaUnitCrimeTypePieChart(area_unit, offence_type, selectedYear);
         
         }
     } 
 
-})
+});
+
+full_mapView_button.addEventListener('click', () => {
+    const graphView = document.getElementById("graph_view");
+    if(graphView.style.display === 'none'){
+        icon.classList.remove('fa-chevron-left');
+        icon.classList.add('fa-chevron-right');
+        graphView.style.display = 'flex';
+        
+    }else{
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-left');
+        graphView.style.display = 'none';
+    }
+});
 
 document.addEventListener('click', (event) => {
     if(!event.target.closest('.conditions')){
@@ -204,3 +281,10 @@ regionSuggestions.addEventListener('wheel', (event) => {
 suburbSuggeations.addEventListener('wheel', (event) => {
     event.stopPropagation();
 });
+
+// Close modal if clicking outside the content
+window.addEventListener('click', (event) => {
+    if(event.target === modal) {
+        modal.style.display = 'none';
+    }
+})
